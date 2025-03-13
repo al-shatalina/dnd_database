@@ -3,8 +3,7 @@
     margin: 0;
     padding: 0;
     background-image: url(../img/bg.jpg);
-    background-repeat: no-repeat;
-    background-size: cover;">
+    background-repeat: repeat;">
 <div style= "width: 60%;
     height: auto;
     margin: 30px 20%;
@@ -16,7 +15,7 @@
 <?php 
 
 if (isset($_POST['posted'])){
-    $database = new mysqli('mysql_db', 'root', 'rootpass', 'dnd');
+    $database = new mysqli('mysql_db', 'root', 'rootpass', 'dictionary');
     
     if (!$database)
     { 
@@ -27,43 +26,37 @@ if (isset($_POST['posted'])){
     $posted = trim($posted); 
     $posted = htmlspecialchars($posted);
 
-    $q1 = "SELECT planned_session_number, event_name, event_place, place_region, event_description 
-    FROM planned_events
-    JOIN places ON places.place = planned_events.event_place
-    WHERE  planned_session_number LIKE '%$posted%';";
-    $q2 = "SELECT actual_session_number, event_char, event_name, char_action, char_name, char_surname FROM actual_events
-    JOIN planned_events ON actual_events.event = planned_events.event_id
-    JOIN characters ON actual_events.event_char = characters.char_id
-    WHERE actual_session_number LIKE '%$posted%';";
+    $q1 = "SELECT dict_articles.article_id, dict_articles.term, dict_articles.part_speech, definitions.def_name, translations.transl_name, translations.transcription, contexts.rus_cont, contexts.eng_cont, contexts.source
+    FROM dict_articles, definitions, translations, contexts, dict_cont, dict_transl
+    WHERE dict_articles.definition = definitions.def_id AND contexts.cont_id = dict_cont.context AND dict_articles.article_id = dict_cont.article_forcont AND translations.transl_id = dict_transl.translation AND dict_articles.article_id = dict_transl.article_fortransl AND dict_articles.term LIKE '%$posted%';";
+    $q2 = "SELECT dict_articles.term, contexts.rus_cont, contexts.eng_cont, contexts.source FROM dict_articles, contexts, dict_cont WHERE contexts.cont_id = dict_cont.context AND dict_articles.article_id = dict_cont.article_forcont AND dict_articles.term LIKE '%$posted%';";
 
     $result1 = mysqli_query($database, $q1); 
     $result2 = mysqli_query($database, $q2);
     $num_rows = mysqli_num_rows($result2);
-
-    echo "
-        <b>Session Number $posted</b>
-        <br>";
+    
+    $row = mysqli_fetch_array($result1);
+        echo "
+        <b>$row[term]</b>
+        <br>
+        <i>$row[part_speech]</i>
+        <hr>
+        $row[transl_name] - /$row[transcription]/
+        <hr>
+        $row[def_name]
+        <hr>";
     for ($i=0; $i<$num_rows; $i++){
-        $row = mysqli_fetch_array($result1);
-        echo "
-        <b><i>$row[event_name]</i></b>
-        <hr>
-        $row[place_region] - $row[event_place]
-        <hr>
-        $row[event_description]
-        <hr>
-        <hr>
-        <b>What really happened:</b>
-        <hr>";
         $row = mysqli_fetch_array($result2);
-        echo "
-        $row[char_name] $row[char_surname]
+        echo"
+        $row[rus_cont]
+        <br>
+        <br>
+        $row[eng_cont]
         <hr>
-        <i>$row[char_action]</i>
-        <hr>
+        $row[source]
         <hr>";
-        }
-        }
+    }
+}
 ?>
     </div>
 <body>
